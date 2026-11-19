@@ -1,0 +1,4 @@
+# 216 本地补丁：上游 compose.yaml 的 mysql 没有重启策略，机器重启后数据库不会自启。
+services:
+  mysql:
+    restart: unless-stopped
