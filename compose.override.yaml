@@ -1,4 +1,29 @@
-# 216 本地补丁：上游 compose.yaml 的 mysql 没有重启策略，机器重启后数据库不会自启。
+# 216 本地补丁（上游 compose.yaml 之外的部分），说明见 DEPLOY-216.md。
 services:
   mysql:
+    # 上游没设重启策略，机器重启后数据库不会自启。
     restart: unless-stopped
+  platform:
+    ports:
+      # SSO 网关（sso-gate 容器借用本容器网络，监听 8091）；只给本机 frpc 用。
+      - "127.0.0.1:8091:8091"
+    environment:
+      # 信任 SSO 网关经回环地址带来的工号（Staffname），并要求带共享密钥。
+      AGENTFLOW_TRUST_IDENTITY_HEADERS: "true"
+      AGENTFLOW_IDENTITY_HEADER_SECRET: ${LOOPFORGE_GATE_IDENTITY_SECRET:?missing gate identity secret}
+  sso-gate:
+    profiles: [platform]
+    image: ${LOOPFORGE_IMAGE:-ghcr.io/tencent/loopforge:0.4.0}
+    network_mode: "service:platform"
+    entrypoint: ["/gate/lf-sso-gate"]
+    command: []
+    env_file: /etc/loopforge-gate/gate.env
+    volumes:
+      - /opt/loopforge-gate:/gate:ro
+      - /etc/loopforge-gate/access:/etc/lf-gate/access:ro
+    depends_on:
+      platform:
+        condition: service_healthy
+        restart: true
+    restart: unless-stopped
+    mem_limit: 128m
