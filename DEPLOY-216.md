@@ -26,7 +26,10 @@
 - 执行器：Claude Code 2.1.300（首次使用时由平台从 npm 装到 `/home/loopforge-data/cli/claude-code`）。
 - 管理员的个人凭据：Base URL `https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic`，模型 `qwen4-max-preview`（注意中间的短横线，写成 `qwen4maxpreview` 会报 Model not exist），Key 只存在平台数据库里。
 - 每个成员要在「个人设置」里自己填 Key、Base URL 和模型。
-- 需求澄清、通知摘要等功能只走 CodeBuddy，没配 CodeBuddy Key 时这几项不可用；对话和 SOP 不受影响。
+- 不用 CodeBuddy（要会员，且需要大陆手机号/付款方式）。需求澄清、通知摘要、机器人回复、运行评估这几项写死只走 CodeBuddy，因此不可用；对话和 SOP 不受影响。
+- 2026-11-20 把内置 4 个 SOP 模板（`generic_templates` 表：后端交付、前端交付、产品交付、缺陷修复，共 25 个角色）和独立角色 `baseline-align-resolver`（`agents` 表）从 `codebuddy` 改成 `executorId=claude`、`model=qwen4-max-preview`。备份 `/root/loopforge-templates-bak-20261120.sql`（回滚：在 216 `/home/LoopForge` 执行 `docker compose exec -T mysql sh -c 'MYSQL_PWD=$MYSQL_PASSWORD mysql -u loopforge loopforge' < /root/loopforge-templates-bak-20261120.sql`）。
+- 安装脚本的种子数据是 `INSERT IGNORE`，重跑安装不会覆盖这个改动；但**升级到新版本后**，新迁移可能改写模板角色，升级后用 `SELECT id, JSON_SEARCH(payload,'all','codebuddy') FROM generic_templates` 检查，有就照上面再改一次。
+- 新建角色或从模板复制出来的 SOP，在设计器里确认执行器是 Claude Code、模型是 `qwen4-max-preview`。
 
 ## 216 上为部署做的系统改动
 
